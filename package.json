@@ -3,6 +3,7 @@
   "displayName": "JSON Path Expander",
   "description": "Enter a JSON path and value to auto-expand and insert into the active JSON/JSONC file.",
   "version": "1.0.0",
+  "repository": "https://github.com/nstr-dev/JSON-Path-Expander",
   "publisher": "nstr-dev",
   "engines": {
     "vscode": "^1.85.0"
