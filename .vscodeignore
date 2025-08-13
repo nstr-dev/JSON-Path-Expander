@@ -1,0 +1,6 @@
+# .vscodeignore
+out/test/**
+src/**
+tsconfig.json
+*.map
+

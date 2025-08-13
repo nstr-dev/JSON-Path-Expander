@@ -1,0 +1,69 @@
+= JSON Path Expander
+:icons: font
+:toc: macro
+:toc-title: Contents
+
+[.lead]
+A simple, unmaintained VS Code extension to quickly insert or expand values in JSON/JSONC files using a dot/bracket path.  
+This project is not actively updated—it's just here to help me (and maybe you).
+
+toc::[]
+
+== Features
+
+* Insert or expand any value in a JSON/JSONC file by specifying a path (e.g. `foo.bar[0].baz`)
+* Supports raw JSON values, numbers, booleans, strings, and objects
+* Reveals the inserted value in the editor
+
+== Installation
+
+. Clone this repository:
++
+[source,sh]
+----
+git clone https://github.com/nstr-dev/json-path-expander.git
+cd json-path-expander
+----
+
+. Compile the extension:
++
+[source,sh]
+----
+npm install
+npm run compile
+----
+
+. Package the extension (optional, for VSIX install):
++
+[source,sh]
+----
+npm run package
+----
+
+. Install in VS Code:
++
+* For development: Press `F5` in VS Code to launch an Extension Development Host.
+* For VSIX: Use the command `Extensions: Install from VSIX` in the command palette
+
+== Usage
+
+. Open a `.json` or `.jsonc` file in VS Code.
+. Run the command:
++
+* Press `Cmd+Shift+P` (Mac) or `Ctrl+Shift+P` (Windows/Linux)
+* Type `JSON Path Expander: Insert/Expand Value` and hit Enter
+
+. Enter the JSON path (dot/bracket notation).
+. Enter the value (raw JSON, quoted string, number, boolean, etc.).
+. The extension will insert or expand the value at the specified path.
+
+== Disclaimer
+
+[WARNING]
+====
+This extension is not actively maintained and may not receive updates. It is published for reference and inspiration purposes.
+====
+
+== License
+
+LGLP-3.0
