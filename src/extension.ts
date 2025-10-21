@@ -12,17 +12,57 @@ export function activate(context: vscode.ExtensionContext) {
     async () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) {
-        vscode.window.showErrorMessage("Open a JSON/JSONC file first.");
+        vscode.window.showErrorMessage("Open a JSON/JSONC/JS/TS file first.");
         return;
       }
 
       const doc = editor.document;
       const languageId = doc.languageId;
-      if (languageId !== "json" && languageId !== "jsonc") {
+      if (
+        languageId !== "json" &&
+        languageId !== "jsonc" &&
+        languageId !== "javascript" &&
+        languageId !== "typescript"
+      ) {
         const proceed = await vscode.window.showQuickPick(["Yes", "No"], {
-          placeHolder: "Active file is not JSON/JSONC. Continue anyway?",
+          placeHolder: "Active file is not JSON/JSONC/JS/TS. Continue anyway?",
         });
         if (proceed !== "Yes") return;
+      }
+
+      const originalText = doc.getText();
+      let text = originalText.trim().length === 0 ? "{}" : originalText;
+      let prefix = "";
+      let suffix = "";
+      let isWrapped = false;
+
+      let variableName: string | undefined;
+      if (languageId === "javascript" || languageId === "typescript") {
+        const variables = findJsonVariables(originalText);
+        if (variables.length === 0) {
+          vscode.window.showErrorMessage(
+            "No valid JSON object variables found in the file."
+          );
+          return;
+        }
+        variableName = await vscode.window.showQuickPick(
+          variables.map((v) => v.name),
+          {
+            placeHolder: "Select a variable containing a JSON object",
+          }
+        );
+        if (!variableName) return;
+
+        const selectedVar = variables.find((v) => v.name === variableName);
+        if (!selectedVar) {
+          vscode.window.showErrorMessage("Selected variable not found.");
+          return;
+        }
+
+        text = selectedVar.json;
+        prefix = originalText.slice(0, selectedVar.jsonStart);
+        suffix = originalText.slice(selectedVar.jsonEnd);
+        isWrapped = true;
       }
 
       const pathInput = await vscode.window.showInputBox({
@@ -44,9 +84,6 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      const originalText = doc.getText();
-      const text = originalText.trim().length === 0 ? "{}" : originalText;
-
       const value = coerceValue(valueInput);
       const formatting = detectFormattingOptions(doc);
 
@@ -60,7 +97,11 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      const newText = applyEdits(text, edits);
+      let newText = applyEdits(text, edits);
+
+      if (isWrapped) {
+        newText = `${prefix}${newText}${suffix}`;
+      }
 
       await editor.edit((builder) => {
         const fullRange = new vscode.Range(
@@ -134,6 +175,38 @@ function detectFormattingOptions(doc: vscode.TextDocument) {
     insertSpaces: !useTabs,
     tabSize,
   };
+}
+
+function findJsonVariables(
+  text: string
+): { name: string; json: string; jsonStart: number; jsonEnd: number }[] {
+  const variables: {
+    name: string;
+    json: string;
+    jsonStart: number;
+    jsonEnd: number;
+  }[] = [];
+  const regex =
+    /(?:export\s+)?(?:const|let|var\s+)?(\w+)?\s*=\s*({[\s\S]*?})(?:;|$)|({[\s\S]*?})(?:;|$)/g;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    const name = match[1] || `Object_${variables.length + 1}`;
+    const json = match[2] || match[3];
+    try {
+      parseTree(json);
+      const jsonStart = match.index + match[0].indexOf(json);
+      const jsonEnd = jsonStart + json.length;
+      variables.push({
+        name,
+        json,
+        jsonStart,
+        jsonEnd,
+      });
+    } catch {}
+  }
+
+  return variables;
 }
 
 function tryRevealPath(
